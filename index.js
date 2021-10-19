@@ -5,7 +5,7 @@ const path = require('path')
 const tar = require('tar')
 const glob = require('glob')
 const download = require('download')
-const fs = require('fs')
+const fse = require('fs-extra')
 const nodeAbi = require('node-abi')
 const { Command } = require('commander')
 const program = new Command()
@@ -40,11 +40,11 @@ function copySDKToBinaryDir() {
         root: sdk_path,
         absolute: true
     }, function (er, files) {
-        if (!fs.existsSync(path.join(process.cwd(), binary_dir))) {
-            fs.mkdirSync(path.join(process.cwd(), binary_dir), { recursive: true })
+        if (!fse.pathExistsSync(path.join(process.cwd(), binary_dir))) {
+            fse.mkdirSync(path.join(process.cwd(), binary_dir), { recursive: true })
         }
         files.forEach(filepath => {
-            fs.copyFileSync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)))
+            fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)))
         })
     })
 }
@@ -115,12 +115,12 @@ function downloadSDK(name_sdk, arch, publish_json) {
             strip: 1,
             extract: true
         }).then(() => {
-            fs.readdirSync(temp_path).forEach(file => {
+            fse.readdirSync(temp_path).forEach(file => {
                 console.info(`[node_pre_build] found package: ${file}`)
                 if (file.includes(matchPlatform) && file.includes(matchArch)) {
                     const sdk_archive = path.join(temp_path, file)
-                    if (!fs.existsSync(sdk_path)) {
-                        fs.mkdirSync(sdk_path)
+                    if (!fse.pathExistsSync(sdk_path)) {
+                        fse.mkdirSync(sdk_path)
                     }
                     console.info(`[node_pre_build] Extract file from ${sdk_archive} to ${sdk_path}`)
                     tar.extract({
@@ -211,9 +211,9 @@ program
     .description('Clean installed pre-built binary')
     .action((options) => {
         console.info(`[node_pre_build] removing ${sdk_path}.`)
-        fs.rmdirSync(sdk_path, { recursive: true, force: true })
+        fse.removeSync(sdk_path)
         console.info(`[node_pre_build] removing ${temp_path}.`)
-        fs.rmdirSync(temp_path, { recursive: true, force: true })
+        fse.removeSync(temp_path)
     })
 
 //install
@@ -223,7 +223,7 @@ program
     .option('-a, --arch <architecture>', 'architecture of the host machine.')
     .option('--fall-back-to-build [build-script]', 'build when download pre-built binary failed.')
     .action((options) => {
-        if (fs.existsSync(sdk_path) && fs.readdirSync(sdk_path).length > 0) {
+        if (fse.pathExistsSync(sdk_path) && fse.readdirSync(sdk_path).length > 0) {
             console.info(`[node_pre_build] sdk already installed in ${sdk_path}.`)
             return
         }
@@ -238,9 +238,9 @@ program
     .option('--fall-back-to-build [build-script]', 'build when download pre-built binary failed.')
     .action((options) => {
         console.info(`[node_pre_build] removing ${sdk_path}.`)
-        fs.rmdirSync(sdk_path, { recursive: true, force: true })
+        fse.removeSync(sdk_path)
         console.info(`[node_pre_build] removing ${temp_path}.`)
-        fs.rmdirSync(sdk_path, { recursive: true, force: true })
+        fse.removeSync(temp_path)
         install(options)
     })
 
@@ -266,8 +266,8 @@ program
         if (buildTool != 'cmake-js' && buildTool != 'node-pre-gyp') {
             console.error("'build-tool' should be cmake-js or node-pre-gyp.")
         }
-        if (!fs.existsSync(process.cwd() + '/' + package_dir))
-            fs.mkdirSync(process.cwd() + '/' + package_dir)
+        if (!fse.pathExistsSync(process.cwd() + '/' + package_dir))
+            fse.mkdirSync(process.cwd() + '/' + package_dir)
         runtime_array.forEach(runtime => {
             runtime_version_array.forEach(version => {
                 arch_array.forEach(arch => {
@@ -289,7 +289,7 @@ program
                                 return true
                             }
                         }
-                    }, fs.readdirSync(process.cwd() + '/' + binary_dir))
+                    }, fse.readdirSync(process.cwd() + '/' + binary_dir))
                 });
             });
         });
@@ -307,13 +307,13 @@ program
         if (git.branch === "master" || git.branch === "main") {
             if (package_json.name.includes('@yxfe/')) {
                 package_json.name = package_json.name.slice(package_json.name.indexOf('/') + 1)
-                fs.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+                fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
             }
             shell.exec(`npm version ${version}`)
         } else {
             if (!package_json.name.includes('@yxfe/')) {
                 package_json.name = `@yxfe/${package_json.name}`
-                fs.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+                fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
             }
             shell.exec(`npm version --no-git-tag-version ${version}-${git.branch()}-${git.count()}`)
         }
@@ -324,7 +324,7 @@ program
         }
         package_json.version = version
         package_json.name = name
-        fs.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+        fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
     })
 
 //parse
