@@ -1,6 +1,6 @@
 {
   "name": "node-pre-build",
-  "version": "0.0.14",
+  "version": "0.0.24",
   "description": "A node tool to install pre-built sdk and addon.",
   "main": "index.js",
   "bin": {
@@ -27,6 +27,8 @@
   "dependencies": {
     "commander": "^8.2.0",
     "download": "^8.0.0",
+    "git-rev-sync": "^3.0.1",
+    "glob": "^7.2.0",
     "node-abi": "^3.2.0",
     "node-fetch": "^2.6.5",
     "path": "^0.12.7",
