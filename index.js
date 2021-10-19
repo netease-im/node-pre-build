@@ -77,6 +77,12 @@ function build(buildTool, runtime, version, arch) {
             generator = "Unix Makefiles"
         }
         shell_command = `npx cmake-js rebuild -G ${generator} -A ${generator_arch} --arch ${arch} --runtime ${runtime} --runtime-version ${version}`
+        if (is_electron) {
+            shell.exec('npm config set cmake_NODE_V8_COMPRESS_POINTERS TRUE')
+        } else {
+            shell.exec('npm config delete cmake_NODE_V8_COMPRESS_POINTERS')
+        }
+
     } else {
         shell_command = `npx node-gyp rebuild --target ${version}  --arch ${arch}`
         if (is_electron)
