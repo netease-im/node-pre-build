@@ -44,7 +44,9 @@ function copySDKToBinaryDir() {
             fse.mkdirSync(path.join(process.cwd(), binary_dir), { recursive: true })
         }
         files.forEach(filepath => {
-            fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)))
+            fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {
+                overwrite: true
+            })
         })
     })
 }
@@ -66,7 +68,7 @@ function build(buildTool, runtime, version, arch) {
         let generator_arch = ""
         let generator = ""
         if (platform == "win32") {
-            generator = `"Visual Studio 15 2017"`
+            generator = `\\"Visual Studio 15 2017\\"`
             if (arch == "ia32")
                 generator_arch = "Win32"
             else if (arch == "x64")
@@ -74,7 +76,7 @@ function build(buildTool, runtime, version, arch) {
         } else if (platform == "darwin") {
             generator = "Xcode"
         } else if (platform == "linux") {
-            generator = "Unix Makefiles"
+            generator = `"Unix Makefiles"`
         }
         shell_command = `npx cmake-js rebuild -G ${generator} -A ${generator_arch} --arch ${arch} --runtime ${runtime} --runtime-version ${version}`
         if (is_electron) {
@@ -89,7 +91,6 @@ function build(buildTool, runtime, version, arch) {
             shell_command += ' --dist-url=https://electronjs.org/headers'
     }
     shell.exec(shell_command)
-    copySDKToBinaryDir()
 }
 
 function downloadSDK(name_sdk, arch, publish_json) {
@@ -168,6 +169,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
             }
             console.info("[node_pre_build] Failed to get download url of the pre-built addon, falling back to build.")
             build(package_json.node_pre_build['build-tool'])
+            copySDKToBinaryDir()
             return resolve()
         }
         console.info(`[node_pre_build] Downloading prebuilt addon from ${addon_url}`)
@@ -182,6 +184,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
             }
             console.info(`[node_pre_build] Failed to download pre-built addon from ${addon_url}, falling back to build.`)
             build(package_json.node_pre_build['build-tool'])
+            copySDKToBinaryDir()
             return resolve()
         })
     })
@@ -282,9 +285,9 @@ program
                         gzip: true,
                         sync: true,
                         cwd: process.cwd() + '/' + binary_dir,
-                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
+                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-abi${abi_version}-${platform}-${arch}.tar.gz`,
                         filter: (path, stat) => {
-                            if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
+                            if (path.match(/\.pdb|\.node|/g) !== null) {
                                 console.info(`[node_pre_build] ${path} packed.`)
                                 return true
                             }
