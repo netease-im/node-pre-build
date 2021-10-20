@@ -153,13 +153,16 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
         });
         let addon_url
         let abi_version
+        let runtime
         if (is_electron) {
             abi_version = nodeAbi.getAbi(electron_version, 'electron')
+            runtime = 'electron'
         } else {
-            abi_version = nodeAbi.getAbi(process.versions.node, 'electron')
+            abi_version = nodeAbi.getAbi(process.versions.node, 'node')
+            runtime = 'node'
         }
         addon_list.forEach(member => {
-            if (member.filename.includes(name_addon) && member.filename.includes(platform) && member.filename.includes(arch) && member.filename.includes(abi_version)) {
+            if (member.filename.includes(name_addon) && member.filename.includes(platform) && member.filename.includes(runtime) && member.filename.includes(arch) && member.filename.includes(abi_version)) {
                 addon_url = member.cdnlink
             }
         })
@@ -285,7 +288,7 @@ program
                         gzip: true,
                         sync: true,
                         cwd: process.cwd() + '/' + binary_dir,
-                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-abi${abi_version}-${platform}-${arch}.tar.gz`,
+                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-${runtime}-abi${abi_version}-${platform}-${arch}.tar.gz`,
                         filter: (path, stat) => {
                             if (path.match(/\.pdb|\.node|/g) !== null) {
                                 console.info(`[node_pre_build] ${path} packed.`)
