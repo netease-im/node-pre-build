@@ -105,42 +105,20 @@ function downloadSDK(name_sdk, arch, publish_json) {
         });
         let sdk_url
         sdk_list.forEach(member => {
-            if (member.filename.includes(name_sdk)) {
+            if (member.filename.includes(name_sdk) && member.filename.includes(platform) && member.filename.includes(arch)) {
                 sdk_url = member.cdnlink
             }
         })
         if (!sdk_url) {
             return reject("[node_pre_build] Failed to get download url of the pre-built sdk")
         }
-        const matchPlatform = platform === 'win32' ? 'windows' : 'macosx'
-        const matchArch = arch === 'ia32' ? 'x86' : (platform === 'win32' ? 'x64' : 'x86_64')
-        console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url}`)
-        download(sdk_url, temp_path, {
+        console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url} to ${sdk_path}`)
+        download(sdk_url, sdk_path, {
             strip: 1,
             extract: true
         }).then(() => {
-            fse.readdirSync(temp_path).forEach(file => {
-                console.info(`[node_pre_build] found package: ${file}`)
-                if (file.includes(matchPlatform) && file.includes(matchArch)) {
-                    const sdk_archive = path.join(temp_path, file)
-                    if (!fse.pathExistsSync(sdk_path)) {
-                        fse.mkdirSync(sdk_path)
-                    }
-                    console.info(`[node_pre_build] Extract file from ${sdk_archive} to ${sdk_path}`)
-                    tar.extract({
-                        file: sdk_archive,
-                        cwd: sdk_path,
-                        sync: true,
-                        filter: (path, entry) => {
-                            if (path.includes('._'))
-                                return false
-                            return true
-                        }
-                    })
-                    return resolve()
-                }
-            })
-            return reject('[node_pre_build] No matching sdk package found.')
+            console.info(`[node_pre_build] Downloading prebuilt sdk complete`)
+            return resolve()
         }).catch((err) => {
             return reject(err)
         })
