@@ -7,6 +7,10 @@ const glob = require('glob')
 const download = require('download')
 const fse = require('fs-extra')
 const nodeAbi = require('node-abi')
+const FormData = require('form-data');
+const crypto = require('crypto');
+const fsHash = crypto.createHash('md5')
+const axios = require('axios').default;
 const { Command } = require('commander')
 const program = new Command()
 const package_json = require(process.cwd() + '/package.json')
@@ -44,9 +48,7 @@ function copySDKToBinaryDir() {
             fse.mkdirSync(path.join(process.cwd(), binary_dir), { recursive: true })
         }
         files.forEach(filepath => {
-            fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {
-                overwrite: true
-            })
+            fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), { dereference: true })
         })
     })
 }
@@ -91,13 +93,14 @@ function build(buildTool, runtime, version, arch) {
             shell_command += ' --dist-url=https://electronjs.org/headers'
     }
     shell.exec(shell_command)
+    copySDKToBinaryDir()
 }
 
 function downloadSDK(name_sdk, arch, publish_json) {
     return new Promise((resolve, reject) => {
         let sdk_list = []
         Object.keys(publish_json[sdk_group]).forEach(temp => {
-            if (package_json.version.includes(temp))
+            if (package_json.version.split('-')[0] === temp)
                 sdk_list = publish_json[sdk_group][temp]
         });
         let sdk_url
@@ -148,21 +151,18 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
     return new Promise((resolve, reject) => {
         let addon_list = []
         Object.keys(publish_json[addon_group]).forEach(temp => {
-            if (package_json.version.includes(temp))
+            if (package_json.version.split('-')[0] === temp)
                 addon_list = publish_json[addon_group][temp]
         });
         let addon_url
         let abi_version
-        let runtime
         if (is_electron) {
             abi_version = nodeAbi.getAbi(electron_version, 'electron')
-            runtime = 'electron'
         } else {
             abi_version = nodeAbi.getAbi(process.versions.node, 'node')
-            runtime = 'node'
         }
         addon_list.forEach(member => {
-            if (member.filename.includes(name_addon) && member.filename.includes(platform) && member.filename.includes(runtime) && member.filename.includes(arch) && member.filename.includes(abi_version)) {
+            if (member.filename.includes(name_addon) && member.filename.includes(platform) && member.filename.includes(arch) && member.filename.includes(abi_version)) {
                 addon_url = member.cdnlink
             }
         })
@@ -172,7 +172,6 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
             }
             console.info("[node_pre_build] Failed to get download url of the pre-built addon, falling back to build.")
             build(package_json.node_pre_build['build-tool'])
-            copySDKToBinaryDir()
             return resolve()
         }
         console.info(`[node_pre_build] Downloading prebuilt addon from ${addon_url}`)
@@ -187,7 +186,6 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
             }
             console.info(`[node_pre_build] Failed to download pre-built addon from ${addon_url}, falling back to build.`)
             build(package_json.node_pre_build['build-tool'])
-            copySDKToBinaryDir()
             return resolve()
         })
     })
@@ -200,7 +198,7 @@ function install(options) {
         arch = process.arch
     }
 
-    //fetch publish list
+    //fetch publish list··
     fetch('http://publish.netease.im/api/list').then(res => res.json()).then(json => {
         return downloadSDK(name_sdk, arch, json).then(() => {
             return downloadAddon(name_addon, arch, options.fallBackToBuild, json)
@@ -288,9 +286,9 @@ program
                         gzip: true,
                         sync: true,
                         cwd: process.cwd() + '/' + binary_dir,
-                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-${runtime}-abi${abi_version}-${platform}-${arch}.tar.gz`,
+                        file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
                         filter: (path, stat) => {
-                            if (path.match(/\.pdb|\.node|/g) !== null) {
+                            if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
                                 console.info(`[node_pre_build] ${path} packed.`)
                                 return true
                             }
@@ -307,31 +305,32 @@ program
     .description('publish your npm package with certain version based on git branch and commit count.')
     .option('--dry-run', 'runs npm publish using --dry-run.')
     .action((options) => {
-        const git = require('git-rev-sync')
         const version = package_json.version
-        const name = package_json.name
-        if (git.branch === "master" || git.branch === "main") {
-            if (package_json.name.includes('@yxfe/')) {
-                package_json.name = package_json.name.slice(package_json.name.indexOf('/') + 1)
-                fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+        const git = require('git-last-commit')
+        git.getLastCommit(function (err, commit) {
+            if (commit.branch === 'develop') {
+                // skip develop
+                return
             }
-            shell.exec(`npm version ${version}`)
-        } else {
-            if (!package_json.name.includes('@yxfe/')) {
-                package_json.name = `@yxfe/${package_json.name}`
-                fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+            let shell_command = 'npm publish'
+            if (options.dryRun)
+                shell_command += ' --dry-run'
+            if (commit.tags.length == 0) {
+                // no tag
+                shell.exec(`npm version ${version}-${commit.branch.replace('/', '-')}-${commit.shortHash} --no-git-tag-version`)
+                shell_command += ` --tag ${commit.branch}`
+            } else {
+                shell.exec(`npm version ${commit.tags[0]} --no-git-tag-version`)
+                if (commit.branch !== "master" && commit.branch !== "main") {
+                    shell_command += ` --tag ${commit.branch}`
+                }
             }
-            shell.exec(`npm version --no-git-tag-version ${version}-${git.branch()}-${git.count()}`)
-        }
-        if (options.dryRun) {
-            shell.exec('npm publish --dry-run')
-        } else {
-            shell.exec('npm publish')
-        }
-        package_json.version = version
-        package_json.name = name
-        fse.writeFileSync('package.json', JSON.stringify(package_json, null, 2))
+            shell.exec(shell_command)
+            //recover version
+            shell.exec(`npm version ${version} --no-git-tag-version`)
+        }, {
+            dst: process.cwd()
+        });
     })
-
 //parse
 program.parse()
