@@ -279,8 +279,8 @@ program
         if (!Array.isArray(arch_array))
             arch_array = [arch_array]
 
-        if (buildTool != 'cmake-js' && buildTool != 'node-pre-gyp') {
-            console.error("'build-tool' should be cmake-js or node-pre-gyp.")
+        if (buildTool != 'cmake-js' && buildTool != 'node-gyp') {
+            console.error("'build-tool' should be cmake-js or node-gyp.")
         }
         if (!fse.pathExistsSync(process.cwd() + '/' + package_dir))
             fse.mkdirSync(process.cwd() + '/' + package_dir)
