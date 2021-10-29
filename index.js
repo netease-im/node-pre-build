@@ -133,10 +133,7 @@ function downloadSDK(name_sdk, arch, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url} to ${sdk_path}`)
         download(sdk_url, sdk_path, {
-            extract: true,
-            filter: (file) => {
-                return !file.includes('._')
-            }
+            extract: true
         }).then(() => {
             console.info(`[node_pre_build] Downloading prebuilt sdk complete`)
             return resolve()
