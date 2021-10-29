@@ -89,8 +89,12 @@ function build(buildTool, runtime, version, arch) {
             target = electron_version
             command.push(`--target=${target} --dist-url=${distUrl}`)
         } else {
-            target = process.version.match(/^v(\d+\.\d+)/)[1]
-            runtime = 'node'
+            if(runtime.length == 0 && version.length == 0){
+                target = process.version.match(/^v(\d+\.\d+)/)[1]
+                runtime = 'node'
+            }else{
+                target = version;
+            }
         }
         console.log(command.join(' '))
         console.log('[build] platform:', platform)
