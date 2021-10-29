@@ -98,27 +98,9 @@ function build(buildTool, runtime, version, arch) {
         console.log('[build] target:', target)
         console.log('[build] runtime:', runtime)
 
-        shell.exec(`${gypExec} clean`, { silent }, (code, stdout, stderr) => {
-            console.log(`[build] node-gyp clean done ${stdout}`)
-            if (code !== 0) {
-                console.error(`[build] node-gyp clean error ${stderr}`)
-                return
-            }
-            shell.exec(command.join(' '), { silent }, (code, stdout, stderr) => {
-                console.log(`[build] node-gyp configure done ${stdout}`)
-                if (code !== 0) {
-                    console.error(`[build] node-gyp configure error ${stderr}`)
-                    return
-                }
-                shell.exec(`${gypExec} build`, { silent }, (code, stdout, stderr) => {
-                    console.log(`[build] node-gyp build done ${stdout}`)
-                    if (code !== 0) {
-                        console.error(`[build] node-gyp build error ${stderr}`)
-                        return
-                    }
-                })
-            })
-        })
+        shell.exec(`${gypExec} clean`, { silent })
+        shell.exec(command.join(' '), { silent })
+        shell.exec(`${gypExec} build`, { silent })
 
     } else {
         shell_command = `npx node-gyp rebuild --target ${version}  --arch ${arch}`
