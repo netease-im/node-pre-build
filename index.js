@@ -75,6 +75,51 @@ function build(buildTool, runtime, version, arch) {
             shell.exec('npm config delete cmake_NODE_V8_COMPRESS_POINTERS')
         }
 
+    } else if(buildTool == 'node-gyp'){
+        console.log('node-gyp build start')
+        let msvcVersion = '2017'
+        let silent = false
+        let distUrl = 'https://electronjs.org/headers'
+        let gypPath = path.join(process.cwd(), '/node_modules/node-gyp/bin/node-gyp.js')
+        let gypExec = `node ${gypPath}`
+        let command = [`${gypExec} configure`]
+        command.push(`--arch=${arch} --msvs_version=${msvcVersion}`)
+        if(is_electron){
+            runtime = 'electron' 
+            target = electron_version
+            command.push(`--target=${target} --dist-url=${distUrl}`)
+        }else{
+            target = process.version.match(/^v(\d+\.\d+)/)[1]
+            runtime = 'node'
+        }
+        console.log(command.join(' '))
+        console.log('[build] platform:', platform)
+        console.log('[build] arch:', arch)
+        console.log('[build] target:', target)
+        console.log('[build] runtime:', runtime)
+    
+        shell.exec(`${gypExec} clean`, { silent }, (code, stdout, stderr) => {
+            console.log(`[build] node-gyp clean done ${stdout}`)
+            if (code !== 0) {
+              console.error(`[build] node-gyp clean error ${stderr}`)
+              return
+            }
+            shell.exec(command.join(' '), { silent }, (code, stdout, stderr) => {
+                console.log(`[build] node-gyp configure done ${stdout}`)
+                if (code !== 0) {
+                    console.error(`[build] node-gyp configure error ${stderr}`)
+                    return
+                }
+                shell.exec(`${gypExec} build`, { silent }, (code, stdout, stderr) =>{
+                    console.log(`[build] node-gyp build done ${stdout}`)
+                    if (code !== 0) {
+                        console.error(`[build] node-gyp build error ${stderr}`)
+                    return
+                }
+                })
+            })
+        })
+        
     } else {
         shell_command = `npx node-gyp rebuild --target ${version}  --arch ${arch}`
         if (is_electron)
