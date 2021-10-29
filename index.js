@@ -75,7 +75,7 @@ function build(buildTool, runtime, version, arch) {
             shell.exec('npm config delete cmake_NODE_V8_COMPRESS_POINTERS')
         }
 
-    } else if(buildTool == 'node-gyp'){
+    } else if (buildTool == 'node-gyp') {
         console.log('node-gyp build start')
         let msvcVersion = '2017'
         let silent = false
@@ -84,11 +84,11 @@ function build(buildTool, runtime, version, arch) {
         let gypExec = `node ${gypPath}`
         let command = [`${gypExec} configure`]
         command.push(`--arch=${arch} --msvs_version=${msvcVersion}`)
-        if(is_electron){
-            runtime = 'electron' 
+        if (is_electron) {
+            runtime = 'electron'
             target = electron_version
             command.push(`--target=${target} --dist-url=${distUrl}`)
-        }else{
+        } else {
             target = process.version.match(/^v(\d+\.\d+)/)[1]
             runtime = 'node'
         }
@@ -97,12 +97,12 @@ function build(buildTool, runtime, version, arch) {
         console.log('[build] arch:', arch)
         console.log('[build] target:', target)
         console.log('[build] runtime:', runtime)
-    
+
         shell.exec(`${gypExec} clean`, { silent }, (code, stdout, stderr) => {
             console.log(`[build] node-gyp clean done ${stdout}`)
             if (code !== 0) {
-              console.error(`[build] node-gyp clean error ${stderr}`)
-              return
+                console.error(`[build] node-gyp clean error ${stderr}`)
+                return
             }
             shell.exec(command.join(' '), { silent }, (code, stdout, stderr) => {
                 console.log(`[build] node-gyp configure done ${stdout}`)
@@ -110,16 +110,16 @@ function build(buildTool, runtime, version, arch) {
                     console.error(`[build] node-gyp configure error ${stderr}`)
                     return
                 }
-                shell.exec(`${gypExec} build`, { silent }, (code, stdout, stderr) =>{
+                shell.exec(`${gypExec} build`, { silent }, (code, stdout, stderr) => {
                     console.log(`[build] node-gyp build done ${stdout}`)
                     if (code !== 0) {
                         console.error(`[build] node-gyp build error ${stderr}`)
-                    return
-                }
+                        return
+                    }
                 })
             })
         })
-        
+
     } else {
         shell_command = `npx node-gyp rebuild --target ${version}  --arch ${arch}`
         if (is_electron)
@@ -147,7 +147,10 @@ function downloadSDK(name_sdk, arch, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url} to ${sdk_path}`)
         download(sdk_url, sdk_path, {
-            extract: true
+            extract: true,
+            filter: (file) => {
+                return !file.includes('._')
+            }
         }).then(() => {
             console.info(`[node_pre_build] Downloading prebuilt sdk complete`)
             return resolve()
