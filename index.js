@@ -7,10 +7,6 @@ const glob = require('glob')
 const download = require('download')
 const fse = require('fs-extra')
 const nodeAbi = require('node-abi')
-const FormData = require('form-data');
-const crypto = require('crypto');
-const fsHash = crypto.createHash('md5')
-const axios = require('axios').default;
 const { Command } = require('commander')
 const program = new Command()
 const package_json = require(process.cwd() + '/package.json')
@@ -69,16 +65,8 @@ function build(buildTool, runtime, version, arch) {
     if (buildTool == 'cmake-js') {
         let generator_arch = ""
         let generator = ""
-        if (platform == "win32") {
-            generator = `\\"Visual Studio 15 2017\\"`
-            if (arch == "ia32")
-                generator_arch = "Win32"
-            else if (arch == "x64")
-                generator_arch = "x64"
-        } else if (platform == "darwin") {
+        if (platform == "darwin") {
             generator = "Xcode"
-        } else if (platform == "linux") {
-            generator = `"Unix Makefiles"`
         }
         shell_command = `npx cmake-js rebuild -G ${generator} -A ${generator_arch} --arch ${arch} --runtime ${runtime} --runtime-version ${version}`
         if (is_electron) {
@@ -114,7 +102,6 @@ function downloadSDK(name_sdk, arch, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url} to ${sdk_path}`)
         download(sdk_url, sdk_path, {
-            strip: 1,
             extract: true
         }).then(() => {
             console.info(`[node_pre_build] Downloading prebuilt sdk complete`)
@@ -154,7 +141,6 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt addon from ${addon_url}`)
         download(addon_url, sdk_path, {
-            strip: 1,
             extract: true
         }).then(() => {
             copySDKToBinaryDir()
@@ -286,23 +272,17 @@ program
         const version = package_json.version
         const git = require('git-last-commit')
         git.getLastCommit(function (err, commit) {
-            if (commit.branch === 'develop') {
-                // skip develop
-                return
-            }
             let shell_command = 'npm publish'
             if (options.dryRun)
                 shell_command += ' --dry-run'
             if (commit.tags.length == 0) {
-                // no tag
-                shell.exec(`npm version ${version}-${commit.branch.replace('/', '-')}-${commit.shortHash} --no-git-tag-version`)
-                shell_command += ` --tag ${commit.branch}`
-            } else {
-                shell.exec(`npm version ${commit.tags[0]} --no-git-tag-version`)
-                if (commit.branch !== "master" && commit.branch !== "main") {
-                    shell_command += ` --tag ${commit.branch}`
-                }
+                return
             }
+            shell.exec(`npm version ${commit.tags[0]} --no-git-tag-version`)
+            if (commit.branch !== "master" && commit.branch !== "main") {
+                shell_command += ` --tag ${commit.branch}`
+            }
+
             shell.exec(shell_command)
             //recover version
             shell.exec(`npm version ${version} --no-git-tag-version`)
