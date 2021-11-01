@@ -314,14 +314,16 @@ program
         const version = package_json.version
         const git = require('git-last-commit')
         git.getLastCommit(function (err, commit) {
+            if (!(commit.tags.length != 0 || commit.branch.includes('release'))) {
+                return
+            }
             let shell_command = 'npm publish'
             if (options.dryRun)
                 shell_command += ' --dry-run'
-            if (commit.tags.length == 0) {
-                return
-            }
-            shell.exec(`npm version ${commit.tags[0]} --no-git-tag-version`)
-            if (commit.branch !== "master" && commit.branch !== "main") {
+            if (commit.tags[0]) {
+                shell.exec(`npm version ${commit.tags[0]} --no-git-tag-version`)
+            } else {
+                shell.exec(`npm version ${version}-${commit.shortHash} --no-git-tag-version`)
                 shell_command += ` --tag ${commit.branch}`
             }
 
