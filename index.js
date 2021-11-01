@@ -28,11 +28,16 @@ if (!sdk_group || !addon_group) {
 }
 // check if project has electron dependency
 const node_modules = require('node_modules-path');
+
 let is_electron = false
 let electron_version
-if (node_modules('electron')) {
+let electron_path = node_modules('electron', process.cwd().split(path.sep))
+if (!electron_path && process.env.INIT_CWD) {
+    electron_path = node_modules('electron', process.env.INIT_CWD.split(path.sep))
+}
+if (electron_path) {
     is_electron = true
-    electron_version = require(path.join(node_modules('electron'), 'electron', 'package.json')).version
+    electron_version = require(path.join(electron_path, 'electron', 'package.json')).version
 }
 
 function copySDKToBinaryDir() {
@@ -89,10 +94,10 @@ function build(buildTool, runtime, version, arch) {
             target = electron_version
             command.push(`--target=${target} --dist-url=${distUrl}`)
         } else {
-            if(runtime.length == 0 && version.length == 0){
+            if (runtime.length == 0 && version.length == 0) {
                 target = process.version.match(/^v(\d+\.\d+)/)[1]
                 runtime = 'node'
-            }else{
+            } else {
                 target = version;
             }
         }
