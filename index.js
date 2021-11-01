@@ -138,7 +138,10 @@ function downloadSDK(name_sdk, arch, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt sdk from ${sdk_url} to ${sdk_path}`)
         download(sdk_url, sdk_path, {
-            extract: true
+            extract: true,
+            filter: (file) => {
+                return !file.path.includes('._')
+            }
         }).then(() => {
             console.info(`[node_pre_build] Downloading prebuilt sdk complete`)
             return resolve()
@@ -177,7 +180,10 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
         }
         console.info(`[node_pre_build] Downloading prebuilt addon from ${addon_url}`)
         download(addon_url, sdk_path, {
-            extract: true
+            extract: true,
+            filter: (file) => {
+                return !file.path.includes('._')
+            }
         }).then(() => {
             copySDKToBinaryDir()
         }).catch((err) => {
