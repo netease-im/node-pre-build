@@ -43,6 +43,7 @@ if (electron_path) {
   is_electron = true;
   electron_version = require(path.join(electron_path, 'electron', 'package.json')).version;
 }
+console.log('is_electron:' + is_electron + ' electron_version:'+ electron_version)
 
 function copySDKToBinaryDir() {
   glob('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
@@ -171,6 +172,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
     } else {
       abi_version = nodeAbi.getAbi(process.versions.node, 'node');
     }
+    console.log('is_electron:' + is_electron + ' abi_version:'+ abi_version + ' electron_version:' + electron_version)
     addon_list.forEach((member) => {
       if (member.filename.includes(name_addon) &&
         member.filename.includes(platform) && member.filename.includes(arch) &&
