@@ -94,22 +94,22 @@ function build(buildTool, runtime, version, arch) {
     const gypExec = `node ${gypPath}`;
     const command = [`${gypExec} configure`];
     command.push(`--arch=${arch} --msvs_version=${msvcVersion}`);
-    if (is_electron) {
-      runtime = 'electron';
-      target = electron_version;
-      command.push(`--target=${target} --dist-url=${distUrl}`);
-    } else {
-      if (runtime.length == 0 && version.length == 0) {
-        target = process.version.match(/^v(\d+\.\d+)/)[1];
-        runtime = 'node';
+    if (!runtime || !version) {
+      if (is_electron) {
+        runtime = 'electron';
+        version = electron_version;
       } else {
-        target = version;
+        runtime = 'node';
+        version = process.versions.node;
       }
     }
-    console.log(command.join(' '));
+    if('electron' == runtime){
+      command.push(`--target=${version} --dist-url=${distUrl}`);
+    }
+    console.log('[build] command:' + command.join(' '));
     console.log('[build] platform:', platform);
     console.log('[build] arch:', arch);
-    console.log('[build] target:', target);
+    console.log('[build] target:', version);
     console.log('[build] runtime:', runtime);
 
     shell.exec(`${gypExec} clean`, {silent});
