@@ -199,7 +199,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
       if (!fallBackToBuild) {
         return reject(err);
       }
-      console.info(`[node_pre_build] Failed to download pre-built addon from ${addon_url}, falling back to build.`);
+      console.info(`[node_pre_build] Failed to download pre-built addon from ${addon_url}, error ${err}, falling back to build.`);
       build(package_json.node_pre_build['build-tool']);
       return resolve();
     });
