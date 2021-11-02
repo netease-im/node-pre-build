@@ -46,17 +46,15 @@ if (electron_path) {
 console.log('is_electron:' + is_electron + ' electron_version:'+ electron_version)
 
 function copySDKToBinaryDir() {
-  glob('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
+  const files = glob.sync('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
     root: sdk_path,
     absolute: true,
-    sync:true
-  }, function(er, files) {
-    if (!fse.pathExistsSync(path.join(process.cwd(), binary_dir))) {
-      fse.mkdirSync(path.join(process.cwd(), binary_dir), {recursive: true});
-    }
-    files.forEach((filepath) => {
-      fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {dereference: true});
-    });
+  })
+  if (!fse.pathExistsSync(path.join(process.cwd(), binary_dir))) {
+    fse.mkdirSync(path.join(process.cwd(), binary_dir), {recursive: true});
+  }
+  files.forEach((filepath) => {
+    fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {dereference: true});
   });
 }
 
