@@ -45,7 +45,7 @@ if (electron_path) {
 }
 console.log('is_electron:' + is_electron + ' electron_version:'+ electron_version)
 
-function copySDKToBinaryDir(runtime, version, arch, pack) {
+function copySDKToBinaryDir() {
   glob('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
     root: sdk_path,
     absolute: true,
@@ -56,29 +56,10 @@ function copySDKToBinaryDir(runtime, version, arch, pack) {
     files.forEach((filepath) => {
       fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {dereference: true});
     });
-
-    if(pack){
-      if (!version || !runtime || !binary_dir || !package_dir) {
-        console.error('pack needs runtime, runtime-version, binary-dir, package-dir defined.');
-      }
-      let abi_version = nodeAbi.getAbi(version, runtime);
-      tar.create({
-        gzip: true,
-        sync: true,
-        cwd: process.cwd() + '/' + binary_dir,
-        file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
-        filter: (path, stat) => {
-          if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
-            console.info(`[node_pre_build] ${path} packed.`);
-            return true;
-          }
-        },
-      }, fse.readdirSync(process.cwd() + '/' + binary_dir));
-    }
   });
 }
 
-function build(buildTool, runtime, version, arch, pack) {
+function build(buildTool, runtime, version, arch) {
   let shell_command;
   if (!arch) {
     arch = process.arch;
@@ -141,7 +122,7 @@ function build(buildTool, runtime, version, arch, pack) {
     };
   }
   shell.exec(shell_command);
-  copySDKToBinaryDir(runtime, version, arch, pack);
+  copySDKToBinaryDir();
 }
 
 function downloadSDK(name_sdk, arch, publish_json) {
@@ -314,26 +295,26 @@ program
       runtime_array.forEach((runtime) => {
         runtime_version_array.forEach((version) => {
           arch_array.forEach((arch) => {
-            build(buildTool, runtime, version, arch, options.pack);
-            // if (!options.pack) {
-            //   return;
-            // };
-            // if (!version || !runtime || !binary_dir || !package_dir) {
-            //   console.error('pack needs runtime, runtime-version, binary-dir, package-dir defined.');
-            // }
-            // const abi_version = nodeAbi.getAbi(version, runtime);
-            // tar.create({
-            //   gzip: true,
-            //   sync: true,
-            //   cwd: process.cwd() + '/' + binary_dir,
-            //   file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
-            //   filter: (path, stat) => {
-            //     if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
-            //       console.info(`[node_pre_build] ${path} packed.`);
-            //       return true;
-            //     }
-            //   },
-            // }, fse.readdirSync(process.cwd() + '/' + binary_dir));
+            build(buildTool, runtime, version, arch);
+            if (!options.pack) {
+              return;
+            };
+            if (!version || !runtime || !binary_dir || !package_dir) {
+              console.error('pack needs runtime, runtime-version, binary-dir, package-dir defined.');
+            }
+            const abi_version = nodeAbi.getAbi(version, runtime);
+            tar.create({
+              gzip: true,
+              sync: true,
+              cwd: process.cwd() + '/' + binary_dir,
+              file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
+              filter: (path, stat) => {
+                if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
+                  console.info(`[node_pre_build] ${path} packed.`);
+                  return true;
+                }
+              },
+            }, fse.readdirSync(process.cwd() + '/' + binary_dir));
           });
         });
       });
