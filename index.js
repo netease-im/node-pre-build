@@ -46,17 +46,25 @@ if (electron_path) {
 console.log(`[node_pre_build] is_electron: ${is_electron}, electron_version: ${electron_version}`)
 
 function copySDKToBinaryDir() {
+  const temp = glob.sync('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
+    root: sdk_path
+  })
+  const files = []
+  temp.forEach((filepath) => {
+    if(!filepath.includes('dSYM')){
+      files.push(filepath)
+    }
+  });
   if (!fse.pathExistsSync(path.join(process.cwd(), binary_dir))) {
     fse.mkdirSync(path.join(process.cwd(), binary_dir), {recursive: true});
   }
-  fse.copySync(sdk_path, path.join(process.cwd(), binary_dir), {
-      dereference:true
+  files.forEach((filepath) => {
+    fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)))
   });
   console.log(`[node_pre_build] copySDKToBinaryDir end`)
 }
 
 function build(buildTool, runtime, version, arch) {
-  let shell_command;
   if (!arch) {
     arch = process.arch;
   };
@@ -70,6 +78,7 @@ function build(buildTool, runtime, version, arch) {
     }
   }
   if (buildTool == 'cmake-js') {
+    let shell_command;
     const generator_arch = '';
     let generator = '';
     if (platform == 'darwin') {
@@ -81,6 +90,7 @@ function build(buildTool, runtime, version, arch) {
     } else {
       shell.exec('npm config delete cmake_NODE_V8_COMPRESS_POINTERS');
     }
+    shell.exec(shell_command);
   } else if (buildTool == 'node-gyp') {
     console.log('node-gyp build start');
     const msvcVersion = '2017';
@@ -111,13 +121,7 @@ function build(buildTool, runtime, version, arch) {
     shell.exec(`${gypExec} clean`, {silent});
     shell.exec(command.join(' '), {silent});
     shell.exec(`${gypExec} build`, {silent});
-  } else {
-    shell_command = `npx node-gyp rebuild --target ${version}  --arch ${arch}`;
-    if (is_electron) {
-      shell_command += ' --dist-url=https://electronjs.org/headers';
-    };
   }
-  shell.exec(shell_command);
   copySDKToBinaryDir();
 }
 
