@@ -43,7 +43,7 @@ if (electron_path) {
   is_electron = true;
   electron_version = require(path.join(electron_path, 'electron', 'package.json')).version;
 }
-console.log('is_electron:' + is_electron + ' electron_version:'+ electron_version)
+console.log(`[node_pre_build] is_electron: ${is_electron}, electron_version: ${electron_version}`)
 
 function copySDKToBinaryDir() {
   if (!fse.pathExistsSync(path.join(process.cwd(), binary_dir))) {
@@ -129,6 +129,7 @@ function downloadSDK(name_sdk, arch, publish_json) {
         sdk_list = publish_json[sdk_group][temp];
       };
     });
+    console.log(`[node_pre_build] downloadSDK name_sdk:${name_sdk}, platform:${platform}, arch:${arch}`)
     let sdk_url;
     sdk_list.forEach((member) => {
       if (member.filename.includes(name_sdk) && member.filename.includes(platform) && member.filename.includes(arch)) {
@@ -169,7 +170,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
     } else {
       abi_version = nodeAbi.getAbi(process.versions.node, 'node');
     }
-    console.log('is_electron:' + is_electron + ' abi_version:'+ abi_version + ' electron_version:' + electron_version)
+    console.log(`[node_pre_build] downloadAddon is_electron:${is_electron}, abi_version:${abi_version}, electron_version:${electron_version}`)
     addon_list.forEach((member) => {
       if (member.filename.includes(name_addon) &&
         member.filename.includes(platform) && member.filename.includes(arch) &&
