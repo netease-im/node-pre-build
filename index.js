@@ -54,8 +54,9 @@ function copySDKToBinaryDir() {
     fse.mkdirSync(path.join(process.cwd(), binary_dir), {recursive: true});
   }
   files.forEach((filepath) => {
-    fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)), {dereference: true});
+    fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)));// {dereference: true}
   });
+  console.log(`[node_pre_build] copySDKToBinaryDir end`)
 }
 
 function build(buildTool, runtime, version, arch) {
@@ -151,6 +152,7 @@ function downloadSDK(name_sdk, arch, publish_json) {
       console.info(`[node_pre_build] Downloading prebuilt sdk complete`);
       return resolve();
     }).catch((err) => {
+      console.log(`[node_pre_build] downloadSDK err:` + err)
       return reject(err);
     });
   });
@@ -195,7 +197,9 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
       },
     }).then(() => {
       copySDKToBinaryDir();
+      console.log(`[node_pre_build] downloadAddon copySDKToBinaryDir end`)
     }).catch((err) => {
+      console.log(`[node_pre_build] downloadAddon err:` + err)
       if (!fallBackToBuild) {
         return reject(err);
       }
@@ -302,6 +306,7 @@ program
               console.error('pack needs runtime, runtime-version, binary-dir, package-dir defined.');
             }
             const abi_version = nodeAbi.getAbi(version, runtime);
+            console.log(`build tar abi_version: ` + abi_version + ' version：' +  ' runtime: ' + runtime + ' arch: ' + arch)
             tar.create({
               gzip: true,
               sync: true,
