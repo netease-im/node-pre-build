@@ -112,6 +112,7 @@ function build(buildTool, runtime, version, arch) {
     if('electron' == runtime){
       command.push(`--target=${version} --dist-url=${distUrl}`);
     }
+    command.push(' --openssl_fips=X')
     console.log('[build] command:' + command.join(' '));
     console.log('[build] platform:', platform);
     console.log('[build] arch:', arch);
