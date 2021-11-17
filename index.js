@@ -51,6 +51,7 @@ function copySDKToBinaryDir() {
   })
   const files = []
   temp.forEach((filepath) => {
+    console.log('pre copySync file:' + path.basename(filepath))
     if(!filepath.includes('dSYM')){
       files.push(filepath)
     }
@@ -59,6 +60,7 @@ function copySDKToBinaryDir() {
     fse.mkdirSync(path.join(process.cwd(), binary_dir), {recursive: true});
   }
   files.forEach((filepath) => {
+    console.log('after copySync file:' + path.basename(filepath))
     fse.copySync(filepath, path.join(process.cwd(), binary_dir, path.basename(filepath)))
   });
   console.log(`[node_pre_build] copySDKToBinaryDir end`)

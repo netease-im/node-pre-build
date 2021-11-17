@@ -1,6 +1,6 @@
 {
   "name": "node-pre-build",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "A node tool to install pre-built sdk and addon.",
   "main": "index.js",
   "bin": {
