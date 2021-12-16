@@ -93,6 +93,7 @@ function build(buildTool, runtime, version, arch) {
       shell.exec('npm config delete cmake_NODE_V8_COMPRESS_POINTERS');
     }
     shell.exec(shell_command);
+    copySDKToBinaryDir();
   } else if (buildTool == 'node-gyp') {
     console.log('node-gyp build start');
     const msvcVersion = '2017';
@@ -125,7 +126,6 @@ function build(buildTool, runtime, version, arch) {
     shell.exec(command.join(' '), {silent});
     shell.exec(`${gypExec} build`, {silent});
   }
-  copySDKToBinaryDir();
 }
 
 function downloadSDK(name_sdk, arch, publish_json) {
