@@ -317,7 +317,7 @@ program
               cwd: process.cwd() + '/' + binary_dir,
               file: `${process.cwd() + '/' + package_dir}/${name_addon}-v${package_json.version}-abi${abi_version}-${platform}-${arch}.tar.gz`,
               filter: (path, stat) => {
-                if (path.match(/\.pdb|\.dll|\.node|\.framework|\.dylib/g) !== null) {
+                if (path.match(/\.pdb|\.node/g) !== null) { //pre /\.pdb|\.dll|\.node|\.framework|\.dylib/g
                   console.info(`[node_pre_build] ${path} packed.`);
                   return true;
                 }
