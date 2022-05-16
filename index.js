@@ -222,9 +222,11 @@ function install(options) {
   }
 
   // fetch publish list··
-  fetch('http://publish.netease.im/api/list').then((res) => res.json()).then((json) => {
-    return downloadSDK(name_sdk, arch, json).then(() => {
-      return downloadAddon(name_addon, arch, options.fallBackToBuild, json);
+  fetch('https://admin.netease.im/public-service/free/publish/list').then((res) => {return res.json()}).then((json) => {
+    let res_data = json.data;
+    console.log(`------res_data----:${res_data}`)
+    return downloadSDK(name_sdk, arch, res_data).then(() => {
+      return downloadAddon(name_addon, arch, options.fallBackToBuild, res_data);
     });
   }).catch((err) => {
     console.error(err);
