@@ -45,6 +45,13 @@ if (electron_path) {
 }
 console.log(`[node_pre_build] is_electron: ${is_electron}, electron_version: ${electron_version}`)
 
+function removeNativeSdk() {
+  if(fse.pathExistsSync(sdk_path)){
+    fse.rmdirSync(sdk_path, { recursive: true })
+    console.log(`[node_pre_build] delecte NertcSdk end`)
+  }
+}
+
 function copySDKToBinaryDir() {
   const temp = glob.sync('/**/+(*.dll|*.framework|*.dylib|*.so|*.node)', {
     root: sdk_path
@@ -202,6 +209,7 @@ function downloadAddon(name_addon, arch, fallBackToBuild, publish_json) {
     }).then(() => {
       copySDKToBinaryDir();
       console.log(`[node_pre_build] downloadAddon copySDKToBinaryDir end`)
+      removeNativeSdk();
     }).catch((err) => {
       console.log(`[node_pre_build] downloadAddon err:${err}`)
       if (!fallBackToBuild) {
