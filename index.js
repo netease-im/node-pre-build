@@ -226,9 +226,12 @@ function install(options) {
   let arch = package_json.node_pre_build['arch'];
   arch = options.arch ? options.arch : arch;
   if (!arch) {
-    arch = process.arch;
+    arch = process.env.npm_config_arch;
+    if(!arch) {
+      arch = process.arch;
+    }
   }
-
+  console.log(`--install optins arch:${arch}`)
   // fetch publish list··
   fetch('https://admin.netease.im/public-service/free/publish/list').then((res) => {return res.json()}).then((json) => {
     let res_data = json.data;
